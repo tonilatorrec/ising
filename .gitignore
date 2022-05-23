@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+main-old.f
+MC2_L_30.dat
