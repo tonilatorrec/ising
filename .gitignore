@@ -34,3 +34,6 @@
 ising*.txt
 
 main-old.f
+
+gprof/*
+res/*

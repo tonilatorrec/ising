@@ -1,5 +1,5 @@
 FC = gfortran
-FLAGS = -no-pie -pg 
+FLAGS = -no-pie
 
 main.out: main.f 
-	$(FC) -o main.out $(FLAGS)
+	$(FC) -o main.out $(FLAGS) main.f

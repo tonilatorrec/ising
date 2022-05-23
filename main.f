@@ -14,7 +14,7 @@ C     VARIABLES
       INTEGER*2 S(1:L,1:L) !spin matrix
       INTEGER*4 PBC(0:L+1)
       DOUBLE PRECISION X, GENRAND_REAL2, MAG, MAGNE, E, ENERG
-      CHARACTER*14 FILENAME
+      CHARACTER*13 FILENAME
 c-----------------------------------------------------------------------
 C     metropolis variables      
       INTEGER I0, J0 !chosen spin
@@ -35,17 +35,17 @@ c-----------------------------------------------------------------------
       N = L*L
       TEMP0 = 1.4D0
       TEMP1 = 3.4D0
-      NTEMP = 20
+      NTEMP = 10
       TEMPSTEP = (TEMP1-TEMP0)/DBLE(NTEMP)
 
       SEED0=117654
-      NSEED=10
+      NSEED=50
 
-      MCTOT=400
-      MCINI=20
+      MCTOT=10000
+      MCINI=200
       MCD=20
 
-      WRITE(FILENAME, '(A8,I2,A4)') 'ising_L_',L,'.txt'
+      WRITE(FILENAME, '(A7,I2,A4)') 'res/_L_',L,'.txt'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       OPEN(UNIT=13, FILE=FILENAME, FORM='FORMATTED')
@@ -59,8 +59,8 @@ c     begin seed loop
         CALL INIT_GENRAND(SEED)
 c-----------------------------------------------------------------------
 C     generate initial spin matrix
+      DO I=1,L
         DO J=1,L
-        DO I=1,L
           X = GENRAND_REAL2()
           IF (X.LT.0.5D0) THEN
             S(I,J)=1
