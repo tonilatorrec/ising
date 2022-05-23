@@ -14,7 +14,7 @@ C     VARIABLES
       INTEGER*2 S(1:L,1:L) !spin matrix
       INTEGER*4 PBC(0:L+1)
       DOUBLE PRECISION X, GENRAND_REAL2, MAG, MAGNE, E, ENERG
-      CHARACTER*12 FILENAME
+      CHARACTER*14 FILENAME
 c-----------------------------------------------------------------------
 C     metropolis variables      
       INTEGER I0, J0 !chosen spin
@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
       MCINI=20
       MCD=20
 
-      WRITE(FILENAME, '(A6,I2,A4)') 'MC2_L_',L,'.dat'
+      WRITE(FILENAME, '(A8,I2,A4)') 'ising_L_',L,'.txt'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       OPEN(UNIT=13, FILE=FILENAME, FORM='FORMATTED')
@@ -296,3 +296,64 @@ CC    T2_MASK     = Z'efc60000'
       mag01(1)=MATRIX_A
       return
       end
+C     ******************************************************************
+      DOUBLE PRECISION FUNCTION MAGNE(S,L)
+C     ******************************************************************
+C     computes system magnetization
+C     input:
+C     S (INTEGER*2): spin matrix 
+C     L (INTEGER*4): matrix size
+C     ******************************************************************
+      IMPLICIT NONE
+      DOUBLE PRECISION MAG
+      INTEGER L,I,J
+      INTEGER*2 S(1:L,1:L)
+C     ******************************************************************
+      MAG = 0.D0
+      DO I=1,L
+      DO J=1,L
+        MAG = MAG+S(I,J)
+      ENDDO
+      ENDDO
+      MAGNE = MAG
+      RETURN
+      END
+C     ******************************************************************
+      DOUBLE PRECISION FUNCTION ENERG(S,L,PBC)
+C     ******************************************************************
+C     computes system energy
+C     input:
+C     S (INTEGER*2): spin matrix 
+C     L (INTEGER*4): matrix size
+C     PBC (INTEGER*4): boundary conditions matrix
+C     ******************************************************************
+      IMPLICIT NONE
+      DOUBLE PRECISION E
+      INTEGER L,I,J,INT
+      INTEGER*2 S(1:L,1:L)
+      INTEGER*4 PBC(0:L+1)
+C     ******************************************************************
+      E=0.D0
+
+      DO I=1,L
+      DO J=1,L
+        INT = -S(PBC(I-1),J)*S(I,J)-S(I,PBC(J-1))*S(I,J)
+        E = E+INT
+      ENDDO
+      ENDDO
+
+      ENERG = E
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE RANDINT(A,B,N)
+c----------------------------------------------------------------------- 
+      IMPLICIT NONE
+      INTEGER*4 A,B,N
+      DOUBLE PRECISION X, GENRAND_REAL2
+c-----------------------------------------------------------------------
+      X = GENRAND_REAL2()
+      N = FLOOR(X*(1+B-A))+A
+      RETURN
+      END
+
