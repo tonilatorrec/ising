@@ -31,5 +31,6 @@
 *.out
 *.app
 
+ising*.txt
+
 main-old.f
-MC2_L_30.dat
