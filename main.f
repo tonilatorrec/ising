@@ -21,11 +21,12 @@ C     metropolis variables
       DOUBLE PRECISION DELTA
       INTEGER*2 DELTAE
       INTEGER MCTOT, MCINI !number of metropolis steps
-      INTEGER NITER, IMC, MCITER, MCSTEP, MCD
+      INTEGER NITER, IMC, MCD
       DOUBLE PRECISION W(-8:8)
 c-----------------------------------------------------------------------
 C     sums and averages
-      DOUBLE PRECISION SUM, SUME, SUME2, SUMM, SUMAM, SUMM2, VARE, VARM 
+      DOUBLE PRECISION SUM, SUME, SUME2, SUMM, SUMAM, SUMM2, VARE, VARM,
+     & EPREV ! previous energy (used to compute dE/dT)
       DOUBLE PRECISION SUMEN,SUMMN,SUMAMN,VARMN,EPSE,EPSM
 c-----------------------------------------------------------------------     
 c-----------------------------------------------------------------------
@@ -39,33 +40,44 @@ c-----------------------------------------------------------------------
       TEMPSTEP = (TEMP1-TEMP0)/DBLE(NTEMP)
 
       SEED0=117654
-      NSEED=50
+      NSEED=10
 
-      MCTOT=10000
+      MCTOT=4000
       MCINI=200
-      MCD=20
+      MCD=100
+      EPREV=0.D0
 
       WRITE(FILENAME, '(A7,I2,A4)') 'res/_L_',L,'.txt'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       OPEN(UNIT=13, FILE=FILENAME, FORM='FORMATTED')
-      WRITE(13,104) "TEMP","SUMEN","EPSE","SUMAMN","EPSM","CAP","SUSC"
+      WRITE(13,104) "TEMP","SUMEN","EPSE","SQRT(SUMM2/N)",
+     &"SUMAMN","EPSM","CAP","SUSC", "DE/DT"
 
 c     begin temperature loop
       DO TEMP=TEMP0,TEMP1,TEMPSTEP
         WRITE(*,*) "TEMP = ", TEMP
+
+C     initialize sums of variables to study
+      SUM=0.0D0
+      SUME=0.0D0
+      SUME2=0.0D0
+      SUMM=0.0D0
+      SUMM2=0.0D0
+      SUMAM=0.0D0
+
 c     begin seed loop
       DO SEED=SEED0,SEED0+NSEED-1,1
         CALL INIT_GENRAND(SEED)
 c-----------------------------------------------------------------------
 C     generate initial spin matrix
-      DO I=1,L
+        DO I=1,L
         DO J=1,L
           X = GENRAND_REAL2()
           IF (X.LT.0.5D0) THEN
-            S(I,J)=1
+          S(I,J)=1
           ELSE
-            S(I,J)=-1
+          S(I,J)=-1
           ENDIF
         ENDDO
         ENDDO
@@ -78,19 +90,12 @@ C     specify periodic boundary conditions
 C     initial magnetization and energy
         MAG = MAGNE(S,L)
         E = ENERG(S,L,PBC)
-C     initialize sums of variables to study
-        SUM=0.0D0
-        SUME=0.0D0
-        SUME2=0.0D0
-        SUMM=0.0D0
-        SUMM2=0.0D0
-        SUMAM=0.0D0
 c-----------------------------------------------------------------------
 C     METROPOLIS ALGORITHM
 c-----------------------------------------------------------------------
 c     prepare all relevant exponential factors
       DO DELTAE=-8,8
-          W(DELTAE)=DEXP(-DFLOAT(DELTAE)/TEMP)
+          W(DELTAE)=EXP(-DELTAE/TEMP)
         ENDDO
 
 c     begin metropolis loop
@@ -127,7 +132,7 @@ c     begin metropolis loop
 c     compute averages every number of steps
           IF ((IMC.GT.MCINI).AND.(MCD*(IMC/MCD).EQ.IMC)) THEN
             MAG = MAGNE(S,L)
-            SUM=SUM+1.0D0
+            SUM=SUM+1
             SUME=SUME+E
             SUME2=SUME2+E*E
             SUMM=SUMM+MAG
@@ -152,14 +157,16 @@ c-----------------------------------------------------------------------
       SUMMN = SUMM/N
       SUMAMN = SUMAM/N
       VARMN = VARM/N
-      EPSE = VARE/(N*DSQRT(SUM))
-      EPSM = VARMN/DSQRT(SUM)
-      CAP = (SUME2-SUME**2.D0)/(TEMP**2.D0)
-      SUSC = (SUMM2-SUMAM**2.D0)/(TEMP)
+      EPSE = VARE/(N*SQRT(SUM))
+      EPSM = VARMN/(N*SQRT(SUM))
+      CAP = (SUME2-SUME**2)/(N*TEMP**2)
+      SUSC = (SUMM2-SUMAM**2)/(N*TEMP)
 
 C     OUTPUT
-       WRITE(13,103) TEMP,SUMEN,EPSE,SUMAMN,EPSM,CAP,SUSC
+      WRITE(13,103) TEMP,SUMEN,EPSE,DSQRT(SUMM2)/N,SUMAMN,EPSM,CAP,
+     &SUSC,(SUMEN-EPREV)/(TEMPSTEP)
       WRITE(*,*) 
+      EPREV=SUMEN
       ENDDO
 c     end temperature loop
 
@@ -167,10 +174,8 @@ c-----------------------------------------------------------------------
 C     ******************************************************************
 C     FORMATS
 C     ******************************************************************
-  101 FORMAT(I5,2X,F10.2,2X,F15.5,2X,9(F15.4,2X))
-  102 FORMAT(A5,2X,A10,2X,A15,2X,9(A15,2X))
-  103 FORMAT(7(F15.4,2X))
-  104 FORMAT(7(A15,2X))
+  103 FORMAT(9(F13.4,2X))
+  104 FORMAT(9(A13,2X))
 C     ******************************************************************
       END PROGRAM
 c-----------------------------------------------------------------------
@@ -310,8 +315,8 @@ C     ******************************************************************
       INTEGER*2 S(1:L,1:L)
 C     ******************************************************************
       MAG = 0.D0
-      DO I=1,L
       DO J=1,L
+      DO I=1,L
         MAG = MAG+S(I,J)
       ENDDO
       ENDDO
@@ -335,8 +340,8 @@ C     ******************************************************************
 C     ******************************************************************
       E=0.D0
 
-      DO I=1,L
       DO J=1,L
+      DO I=1,L
         INT = -S(PBC(I-1),J)*S(I,J)-S(I,PBC(J-1))*S(I,J)
         E = E+INT
       ENDDO
