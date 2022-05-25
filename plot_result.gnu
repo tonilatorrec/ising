@@ -1,7 +1,7 @@
 set term pngcairo
 
 FINPUT = ARG1 # simulation data
-FPLOT_PREFIX = 'res/plots/sim' # filename prefix for plots
+FPLOT_PREFIX = 'sim' # filename prefix for plots
 
 # -------------------
 # PLOTTING

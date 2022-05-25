@@ -15,7 +15,7 @@ C     VARIABLES
       INTEGER N !number of spins
 
       DOUBLE PRECISION X, MAG, MAGNE, E, ENERG
-      CHARACTER*13 FILENAME
+      CHARACTER*9 FILENAME
 c-----------------------------------------------------------------------
 C     metropolis variables      
       INTEGER I0, J0 !chosen spin
@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
       N = L*L
       TEMPSTEP = (TEMP1-TEMP0)/DBLE(NTEMP)
       EPREV=0.D0
-      WRITE(FILENAME, '(A7,I2,A4)') 'res/_L_',L,'.txt'
+      WRITE(FILENAME, '(A3,I2,A4)') '_L_',L,'.txt'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       OPEN(UNIT=13, FILE=FILENAME, FORM='FORMATTED')
