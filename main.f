@@ -4,33 +4,38 @@
 
 C     ******************************************************************      
       IMPLICIT NONE
+      integer, parameter :: short = selected_int_kind(2)
 C     ******************************************************************
 C     VARIABLES
+
+      INTEGER, parameter :: L=30 !lattice size
+      INTEGER :: N = L*L !number of spins
+
       INTEGER SEED, SEED0, NSEED
       DOUBLE PRECISION TEMP, TEMP0, TEMP1, TEMPSTEP
-      INTEGER NTEMP
-      INTEGER I, J, K !control variables
-      INTEGER L !lattice size
-      PARAMETER(L=30)
-      INTEGER N !number of spins
+      INTEGER itemp, NTEMP
+      INTEGER I, J !control variables
 
       DOUBLE PRECISION X, MAG, MAGNE, E, ENERG
-      CHARACTER*9 FILENAME
+
+c     files
+      character(len=9) :: outfile
+      character(len=10) :: configfile = "params.nml" 
 c-----------------------------------------------------------------------
 C     metropolis variables      
       INTEGER I0, J0 !chosen spin
       DOUBLE PRECISION DELTA
-      INTEGER*2 DELTAE
+      INTEGER DELTAE
       INTEGER MCTOT, MCINI !number of metropolis steps
       INTEGER NITER, IMC, MCD
       DOUBLE PRECISION W(-8:8)
 
-      INTEGER*2 S(1:L,1:L) !spin matrix
-      INTEGER*4 PBC(0:L+1)
+      integer(kind=short) :: s(l,l) !spin matrix
+      INTEGER PBC(0:L+1)
 c-----------------------------------------------------------------------
 C     sums and averages
-      DOUBLE PRECISION SUM, SUME, SUME2, SUMM, SUMAM, SUMM2, VARE, VARM,
-     & EPREV ! previous energy (used to compute dE/dT)
+      DOUBLE PRECISION SUM, SUME, SUME2, SUMM, SUMAM, SUMM2, VARE, VARM
+      double precision :: EPREV=0.d0 !previous energy (to compute dE/dT)
       DOUBLE PRECISION SUMEN,SUMMN,SUMAMN,VARMN,EPSE,EPSM
 c-----------------------------------------------------------------------     
 c-----------------------------------------------------------------------
@@ -41,24 +46,24 @@ c-----------------------------------------------------------------------
       namelist /simulparams/ temp0, temp1, ntemp, seed0, nseed
       namelist /mcparams/ mctot, mcini, mcd
 
-      open(20, file="params.nml")
+      open(20, file=configfile)
       read(20, nml=simulparams)
       read(20, nml=mcparams)
       close(20)
 
-      N = L*L
       TEMPSTEP = (TEMP1-TEMP0)/DBLE(NTEMP)
-      EPREV=0.D0
-      WRITE(FILENAME, '(A3,I2,A4)') '_L_',L,'.txt'
+      WRITE(outfile, '(A3,I2,A4)') '_L_',L,'.txt'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      OPEN(UNIT=13, FILE=FILENAME, FORM='FORMATTED')
+      OPEN(UNIT=13, FILE=outfile, FORM='FORMATTED')
       WRITE(13,104) "TEMP","SUMEN","EPSE","SQRT(SUMM2/N)",
      &"SUMAMN","EPSM","CAP","SUSC", "DE/DT"
 
 c     begin temperature loop
-      DO TEMP=TEMP0,TEMP1,TEMPSTEP
-        WRITE(*,*) "TEMP = ", TEMP
+c      DO TEMP=TEMP0,TEMP1,TEMPSTEP
+      do itemp=0,ntemp
+        temp=temp0+itemp*tempstep
+        WRITE(*,'(a, F5.3)') "TEMP = ", TEMP
 
 C     initialize sums of variables to study
       SUM=0.0D0
@@ -186,13 +191,15 @@ C     ******************************************************************
 C     ******************************************************************
 C     computes system magnetization
 C     input:
-C     S (INTEGER*2): spin matrix 
-C     L (INTEGER*4): matrix size
+C     S (INTEGER): spin matrix 
+C     L (INTEGER): matrix size
 C     ******************************************************************
       IMPLICIT NONE
+      integer, parameter :: short = selected_int_kind(2)
+
       DOUBLE PRECISION MAG
       INTEGER L,I,J
-      INTEGER*2 S(1:L,1:L)
+      integer(kind=short) :: S(L,L)
 C     ******************************************************************
       MAG = 0.D0
       DO J=1,L
@@ -208,15 +215,17 @@ C     ******************************************************************
 C     ******************************************************************
 C     computes system energy
 C     input:
-C     S (INTEGER*2): spin matrix 
-C     L (INTEGER*4): matrix size
-C     PBC (INTEGER*4): boundary conditions matrix
+C     S (INTEGER, short): spin matrix 
+C     L (INTEGER): matrix size
+C     PBC (INTEGER): boundary conditions matrix
 C     ******************************************************************
       IMPLICIT NONE
+      integer, parameter :: short = selected_int_kind(2)
+
       DOUBLE PRECISION E
       INTEGER L,I,J,INT
-      INTEGER*2 S(1:L,1:L)
-      INTEGER*4 PBC(0:L+1)
+      integer(kind=short) s(l,l)
+      INTEGER PBC(0:L+1)
 C     ******************************************************************
       E=0.D0
 
