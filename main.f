@@ -1,10 +1,10 @@
       program main
 
-      use random !generates random integers and reals
+      use random !generates random integers and real numbers
+      use thermo !computes thermodynamic variables
 
 C     ******************************************************************      
       IMPLICIT NONE
-      integer, parameter :: short = selected_int_kind(2)
 C     ******************************************************************
 C     VARIABLES
 
@@ -19,7 +19,7 @@ C     VARIABLES
       DOUBLE PRECISION X, MAG, MAGNE, E, ENERG
 
 c     files
-      character(len=9) :: outfile
+      character(len=9) :: outfile ! output file
       character(len=10) :: configfile = "params.nml" 
 c-----------------------------------------------------------------------
 C     metropolis variables      
@@ -30,11 +30,14 @@ C     metropolis variables
       INTEGER NITER, IMC, MCD
       DOUBLE PRECISION W(-8:8)
 
-      integer(kind=short) :: s(l,l) !spin matrix
+      integer(kind=2) :: s(l,l) !spin matrix
       INTEGER PBC(0:L+1)
 c-----------------------------------------------------------------------
 C     sums and averages
-      DOUBLE PRECISION SUM, SUME, SUME2, SUMM, SUMAM, SUMM2, VARE, VARM
+      DOUBLE PRECISION :: sum=0.d0, SUME=0.d0, SUME2=0.d0, SUMM=0.d0,
+     &SUMAM=0.d0, SUMM2=0.d0
+      double precision :: vare, varm
+
       double precision :: EPREV=0.d0 !previous energy (to compute dE/dT)
       DOUBLE PRECISION SUMEN,SUMMN,SUMAMN,VARMN,EPSE,EPSM
 c-----------------------------------------------------------------------     
@@ -64,14 +67,6 @@ c      DO TEMP=TEMP0,TEMP1,TEMPSTEP
       do itemp=0,ntemp
         temp=temp0+itemp*tempstep
         WRITE(*,'(a, F5.3)') "TEMP = ", TEMP
-
-C     initialize sums of variables to study
-      SUM=0.0D0
-      SUME=0.0D0
-      SUME2=0.0D0
-      SUMM=0.0D0
-      SUMM2=0.0D0
-      SUMAM=0.0D0
 
 c     begin seed loop
       DO SEED=SEED0,SEED0+NSEED-1,1
@@ -110,19 +105,21 @@ c     begin metropolis loop
           DO NITER=1,N
             I = 1
             J = L
+c           pick random spin at position (i0, j0)
             CALL RANDINT(I,J,I0)
             CALL RANDINT(I,J,J0)
+c           compute change in energy if the spin was flipped            
             DELTAE = 2*S(I0,J0)*(S(I0,PBC(J0+1))+S(I0,PBC(J0-1))+
      & S(PBC(I0+1),J0)+S(PBC(I0-1),J0))
-            IF (DELTAE.LE.0.D0) THEN
-              S(I0,J0)=-S(I0,J0)
+            IF (DELTAE.LE.0.D0) THEN ! flip if energy decreases
+              S(I0,J0)=-S(I0,J0) 
               E = E+DELTAE
               IF (S(I0,J0).EQ.1) THEN
                 MAG = MAG+2
               ELSE
                 MAG = MAG-2
               ENDIF
-            ELSE
+            ELSE ! flip with probability exp(-deltaE/temp)
               DELTA = GENRAND_REAL2()
               IF (DELTA.LT.W(DELTAE)) THEN
                 S(I0,J0)=-S(I0,J0)
@@ -187,55 +184,3 @@ C     ******************************************************************
       END PROGRAM
 
 C     ******************************************************************
-      DOUBLE PRECISION FUNCTION MAGNE(S,L)
-C     ******************************************************************
-C     computes system magnetization
-C     input:
-C     S (INTEGER): spin matrix 
-C     L (INTEGER): matrix size
-C     ******************************************************************
-      IMPLICIT NONE
-      integer, parameter :: short = selected_int_kind(2)
-
-      DOUBLE PRECISION MAG
-      INTEGER L,I,J
-      integer(kind=short) :: S(L,L)
-C     ******************************************************************
-      MAG = 0.D0
-      DO J=1,L
-      DO I=1,L
-        MAG = MAG+S(I,J)
-      ENDDO
-      ENDDO
-      MAGNE = MAG
-      RETURN
-      END
-C     ******************************************************************
-      DOUBLE PRECISION FUNCTION ENERG(S,L,PBC)
-C     ******************************************************************
-C     computes system energy
-C     input:
-C     S (INTEGER, short): spin matrix 
-C     L (INTEGER): matrix size
-C     PBC (INTEGER): boundary conditions matrix
-C     ******************************************************************
-      IMPLICIT NONE
-      integer, parameter :: short = selected_int_kind(2)
-
-      DOUBLE PRECISION E
-      INTEGER L,I,J,INT
-      integer(kind=short) s(l,l)
-      INTEGER PBC(0:L+1)
-C     ******************************************************************
-      E=0.D0
-
-      DO J=1,L
-      DO I=1,L
-        INT = -S(PBC(I-1),J)*S(I,J)-S(I,PBC(J-1))*S(I,J)
-        E = E+INT
-      ENDDO
-      ENDDO
-
-      ENERG = E
-      RETURN
-      END
